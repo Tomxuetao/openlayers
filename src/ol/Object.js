@@ -79,6 +79,7 @@ export class ObjectEvent extends Event {
  *
  * @fires ObjectEvent
  * @api
+ * BaseObject主要用于往对象中动态添加属性和属性值，在初使化的时候，可以通过构造函数来传递默认添加的对象，然后调用setProperties给values_赋值。
  */
 class BaseObject extends Observable {
   /**
@@ -100,6 +101,7 @@ class BaseObject extends Observable {
     this.values_ = null;
 
     if (opt_values !== undefined) {
+      // 设置属性
       this.setProperties(opt_values);
     }
   }
@@ -133,6 +135,7 @@ class BaseObject extends Observable {
    * @api
    */
   getProperties() {
+    // 复制一个新的对象返回
     return (this.values_ && assign({}, this.values_)) || {};
   }
 
@@ -150,8 +153,10 @@ class BaseObject extends Observable {
   notify(key, oldValue) {
     let eventType;
     eventType = getChangeEventType(key);
+    // 派发‘change:属性名’的事件
     this.dispatchEvent(new ObjectEvent(eventType, key, oldValue));
     eventType = ObjectEventType.PROPERTYCHANGE;
+    // 派发PROPERTYCHANGE事件
     this.dispatchEvent(new ObjectEvent(eventType, key, oldValue));
   }
 
@@ -161,6 +166,7 @@ class BaseObject extends Observable {
    * @param {*} value Value.
    * @param {boolean=} opt_silent Update without triggering an event.
    * @api
+   * 在调用set方法的时候，其中一个流程用到了notify方法，使用该方法可以通知属性的变化。
    */
   set(key, value, opt_silent) {
     const values = this.values_ || (this.values_ = {});

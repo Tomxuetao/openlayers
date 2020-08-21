@@ -15,6 +15,7 @@ import {listen, listenOnce, unlistenByKey} from './events.js';
  *
  * @fires import("./events/Event.js").default
  * @api
+ * Observable是一个观察者对象，这里主要运行了设计模式中的观察者模式，用于订阅和发布事件，该类主要包括on，once，un等方法。
  */
 class Observable extends EventTarget {
   constructor() {
@@ -54,11 +55,14 @@ class Observable extends EventTarget {
    *     called with an array of event types as the first argument, the return
    *     will be an array of keys.
    * @api
+   * 用于添加事件，主要是使用listen方法来调用Target类的addEventListener来添加。
    */
   on(type, listener) {
     if (Array.isArray(type)) {
+      // 数组，多个事件使用的是同一个函数回调
       const len = type.length;
       const keys = new Array(len);
+      // 遍历数组进行添加
       for (let i = 0; i < len; ++i) {
         keys[i] = listen(this, type[i], listener);
       }
@@ -76,6 +80,7 @@ class Observable extends EventTarget {
    *     called with an array of event types as the first argument, the return
    *     will be an array of keys.
    * @api
+   * 同样的事件类型不能重复添加。
    */
   once(type, listener) {
     let key;
@@ -97,6 +102,7 @@ class Observable extends EventTarget {
    * @param {string|Array<string>} type The event type or array of event types.
    * @param {function(?): ?} listener The listener function.
    * @api
+   * 用于删除事件，主要调用Target类的removeEventListener来移除事件。
    */
   un(type, listener) {
     const key = /** @type {Object} */ (listener).ol_key;

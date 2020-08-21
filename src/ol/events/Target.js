@@ -24,6 +24,7 @@ import {clear} from '../obj.js';
  *    `stopPropagation` or `preventDefault` on an event object, it means that no
  *    more listeners after this one will be called. Same as when the listener
  *    returns false.
+ *    Target是一个目标对象，主要用于管理相关的事件，添加事件，移除事件、派发事件等操作都是使用该类来处理。
  */
 class Target extends Disposable {
   /**
@@ -35,24 +36,28 @@ class Target extends Disposable {
     /**
      * @private
      * @type {*}
+     * 参数信息
      */
     this.eventTarget_ = opt_target;
 
     /**
      * @private
      * @type {Object<string, number>}
+     * 待删除的事件
      */
     this.pendingRemovals_ = null;
 
     /**
      * @private
      * @type {Object<string, number>}
+     * 派发中的事件
      */
     this.dispatching_ = null;
 
     /**
      * @private
      * @type {Object<string, Array<import("../events.js").Listener>>}
+     * 所有事件
      */
     this.listeners_ = null;
   }
@@ -60,12 +65,15 @@ class Target extends Disposable {
   /**
    * @param {string} type Type.
    * @param {import("../events.js").Listener} listener Listener.
+   * 添加事件的逻辑为先根据type从listeners_中获取，如果没被添加过，就先初始化数组，然后再进行添加。
    */
   addEventListener(type, listener) {
+    // type和listener不能为空
     if (!type || !listener) {
       return;
     }
     const listeners = this.listeners_ || (this.listeners_ = {});
+    // 为空时初始化数组
     const listenersForType = listeners[type] || (listeners[type] = []);
     if (listenersForType.indexOf(listener) === -1) {
       listenersForType.push(listener);
@@ -81,12 +89,15 @@ class Target extends Disposable {
    * @return {boolean|undefined} `false` if anyone called preventDefault on the
    *     event object or if any of the listeners returned false.
    * @api
+   * 使用dispatchEvent可以对事件进行派发，派发完成后，执行removeEventListener进行删除。
    */
   dispatchEvent(event) {
     /** @type {import("./Event.js").default|Event} */
+    // 判断event类型
     const evt = typeof event === 'string' ? new Event(event) : event;
     const type = evt.type;
     if (!evt.target) {
+      // 找到事件的上档对象
       evt.target = this.eventTarget_ || this;
     }
     const listeners = this.listeners_ && this.listeners_[type];
@@ -95,10 +106,12 @@ class Target extends Disposable {
       const dispatching = this.dispatching_ || (this.dispatching_ = {});
       const pendingRemovals =
         this.pendingRemovals_ || (this.pendingRemovals_ = {});
+      // 判断有没有正在派发的
       if (!(type in dispatching)) {
         dispatching[type] = 0;
         pendingRemovals[type] = 0;
       }
+      // 开始派发事件
       ++dispatching[type];
       for (let i = 0, ii = listeners.length; i < ii; ++i) {
         if ('handleEvent' in listeners[i]) {
@@ -115,6 +128,7 @@ class Target extends Disposable {
           break;
         }
       }
+      // 事件派发结束
       --dispatching[type];
       if (dispatching[type] === 0) {
         let pr = pendingRemovals[type];
@@ -163,6 +177,7 @@ class Target extends Disposable {
   /**
    * @param {string} type Type.
    * @param {import("../events.js").Listener} listener Listener.
+   * 删除事件，该方法主要是通过type和listener将listeners_中对应的事件删除。
    */
   removeEventListener(type, listener) {
     const listeners = this.listeners_ && this.listeners_[type];
